@@ -1,3 +1,4 @@
+Q: How to create connection to mongodb in java using mongo-driver-sync 5.5.1?
 <think>
 Okay, so I need to figure out how to connect to MongoDB using Java with the sync driver version 5.5.1. Let me start by recalling what I know about MongoDB and Java drivers.
 
