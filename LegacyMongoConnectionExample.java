@@ -4,12 +4,14 @@ import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 /**
- * This class demonstrates how to connect to a MongoDB instance using the legacy
- * Java driver (pre-4.x). It specifically shows how to create a MongoClient
- * with authentication credentials and custom timeout settings.
+ * This class demonstrates how to connect to a MongoDB replica set (multiple servers)
+ * using the legacy Java driver (pre-4.x). It specifically shows how to create a
+ * MongoClient with authentication credentials and custom timeout settings.
  *
  * Note on Driver Versions:
  * The classes `com.mongodb.MongoClient` and `com.mongodb.DB` are part of the
@@ -28,8 +30,12 @@ public class LegacyMongoConnectionExample {
 
     public static void main(String[] args) {
         // --- Connection Parameters ---
-        String host = "localhost";
-        int port = 27017;
+        // Create a list of server addresses for the replica set
+        List<ServerAddress> serverList = new ArrayList<>();
+        serverList.add(new ServerAddress("host1.example.com", 27017));
+        serverList.add(new ServerAddress("host2.example.com", 27017));
+        serverList.add(new ServerAddress("host3.example.com", 27017));
+
         String username = "your_username";
         String password = "your_password";
         // The database where the user is defined, typically 'admin'.
@@ -64,19 +70,19 @@ public class LegacyMongoConnectionExample {
                 password.toCharArray()
             );
 
-            // --- 3. Create the MongoClient ---
+            // --- 3. Create the MongoClient for a Replica Set ---
             // This brings all the pieces together:
-            // - ServerAddress: The host and port of the MongoDB instance.
+            // - serverList: A list of MongoDB servers that are part of the replica set.
             // - Credentials: A list of credentials to use for authentication.
             // - Options: The custom timeout settings.
             mongoClient = new MongoClient(
-                new ServerAddress(host, port),
+                serverList,
                 Collections.singletonList(credential),
                 options
             );
 
-            System.out.println("Successfully created MongoClient with authentication!");
-            System.out.println("Connected to server: " + mongoClient.getAddress());
+            System.out.println("Successfully created MongoClient with authentication for replica set!");
+            System.out.println("Connected to cluster. Seed list: " + mongoClient.getAllAddress());
 
             // --- 4. Get the DB Object ---
             // Use the connected client to get an instance of the DB class for your target database.
