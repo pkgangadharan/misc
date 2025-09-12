@@ -1,0 +1,183 @@
+Of course. Here is a Java utility class to validate a string as a valid hostname (with wildcard support) or an IP address, complete with detailed Javadoc documentation.
+This implementation is self-contained and does not require any external libraries.
+HostValidator.java
+import java.util.regex.Pattern;
+
+/**
+ * A utility class for validating hostnames and IP addresses.
+ * <p>
+ * This class provides a static method to check if a given string is a valid
+ * hostname according to RFC 1123 and RFC 952 standards, a wildcard hostname,
+ * or a valid IPv4/IPv6 address.
+ * </p>
+ * <p>
+ * <b>Hostname Validation Rules:</b>
+ * <ul>
+ * <li>The total length must not exceed 253 characters.</li>
+ * <li>It may consist of multiple labels separated by dots ('.').</li>
+ * <li>Each label must be between 1 and 63 characters long.</li>
+ * <li>Labels must begin and end with an alphanumeric character.</li>
+ * <li>Labels may contain alphanumeric characters and hyphens ('-').</li>
+ * </ul>
+ * </p>
+ * <p>
+ * <b>Wildcard Hostname Support:</b>
+ * <ul>
+ * <li>A wildcard is supported only in the first label, e.g., {@code *.example.com}.</li>
+ * <li>The wildcard part must be followed by at least two labels (e.g., {@code *.com} is invalid).</li>
+ * </ul>
+ * </p>
+ * <p>
+ * For production environments, especially where security is critical, using a
+ * well-established library like Google's Guava (InetAddresses) or Apache Commons
+ * Validator is recommended for the most comprehensive and up-to-date validation logic.
+ * </p>
+ *
+ * @author Gemini
+ */
+public final class HostValidator {
+
+    /**
+     * The maximum length of a full hostname (in characters).
+     */
+    private static final int MAX_HOSTNAME_LENGTH = 253;
+
+    /**
+     * The maximum length of a single hostname label (in characters).
+     */
+    private static final int MAX_LABEL_LENGTH = 63;
+
+    /**
+     * Regex for a standard hostname label. A label must start and end with an
+     * alphanumeric character and can contain hyphens in the middle.
+     */
+    private static final String HOSTNAME_LABEL_REGEX = "[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?";
+
+    /**
+     * Compiled regex pattern for a full hostname. It's composed of one or more
+     * labels separated by dots.
+     */
+    private static final Pattern HOSTNAME_PATTERN =
+            Pattern.compile("^(?:" + HOSTNAME_LABEL_REGEX + "\\.)*" + HOSTNAME_LABEL_REGEX + "$");
+
+    /**
+     * Standard regex for validating an IPv4 address. It checks for four octets
+     * separated by dots, where each octet is a number from 0 to 255.
+     */
+    private static final Pattern IPV4_PATTERN =
+            Pattern.compile(
+                    "^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
+                    "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
+                    "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
+                    "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$");
+
+    /**
+     * A comprehensive regex for validating standard IPv6 addresses. This pattern
+     * covers various formats including compressed zero-groups (::) and
+     * IPv4-mapped addresses.
+     */
+    private static final Pattern IPV6_PATTERN =
+            Pattern.compile(
+                    "^(?:(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|" +
+                    "([0-9a-fA-F]{1,4}:){1,7}:|" +
+                    "([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|" +
+                    "([0-9a-fA-F]{1,4}:){1,5}(?::[0-9a-fA-F]{1,4}){1,2}|" +
+                    "([0-9a-fA-F]{1,4}:){1,4}(?::[0-9a-fA-F]{1,4}){1,3}|" +
+                    "([0-9a-fA-F]{1,4}:){1,3}(?::[0-9a-fA-F]{1,4}){1,4}|" +
+                    "([0-9a-fA-F]{1,4}:){1,2}(?::[0-9a-fA-F]{1,4}){1,5}|" +
+                    "[0-9a-fA-F]{1,4}:(?:(?::[0-9a-fA-F]{1,4}){1,6})|" +
+                    "::(?:(?:[0-9a-fA-F]{1,4}:){1,5}[0-9a-fA-F]{1,4}|" +
+                    "(?:[0-9a-fA-F]{1,4}:){0,4}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)" +
+                    "(?:\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3})|" +
+                    "fe80:(?::[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|" +
+                    "::(?:ffff(?::0{1,4}){0,1}:){0,1}" +
+                    "(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}" +
+                    "(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])|" +
+                    "(?:[0-9a-fA-F]{1,4}:){1,4}:" +
+                    "(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}" +
+                    "(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$");
+
+
+    /**
+     * Private constructor to prevent instantiation of this utility class.
+     */
+    private HostValidator() {
+        // Utility class
+    }
+
+    /**
+     * Validates if the given string is a valid hostname, wildcard hostname,
+     * IPv4 address, or IPv6 address.
+     *
+     * @param host The string to validate. Can be null or empty.
+     * @return {@code true} if the string is a valid host or IP address,
+     * {@code false} otherwise.
+     *
+     * <h3>Examples of valid inputs:</h3>
+     * <ul>
+     * <li>{@code example.com} (Hostname)</li>
+     * <li>{@code my-host.internal.net} (Hostname)</li>
+     * <li>{@code *.example.com} (Wildcard Hostname)</li>
+     * <li>{@code 192.168.1.1} (IPv4)</li>
+     * <li>{@code 2001:0db8:85a3:0000:0000:8a2e:0370:7334} (IPv6)</li>
+     * <li>{@code ::1} (IPv6)</li>
+     * </ul>
+     *
+     * <h3>Examples of invalid inputs:</h3>
+     * <ul>
+     * <li>{@code -example.com} (Label starts with a hyphen)</li>
+     * <li>{@code example-.com} (Label ends with a hyphen)</li>
+     * <li>{@code example..com} (Contains empty label)</li>
+     * <li>{@code my.host.*.com} (Wildcard not in the first position)</li>
+     * <li>{@code 256.0.0.1} (Invalid IPv4 octet)</li>
+     * </ul>
+     */
+    public static boolean isValid(String host) {
+        if (host == null || host.trim().isEmpty()) {
+            return false;
+        }
+
+        // Check for IP addresses first
+        if (IPV4_PATTERN.matcher(host).matches() || IPV6_PATTERN.matcher(host).matches()) {
+            return true;
+        }
+
+        // Check for wildcard hostname
+        if (host.startsWith("*.")) {
+            // After removing '.*', the rest must be a valid hostname with at least two labels
+            String baseHost = host.substring(2);
+            // Example: "*.com" is invalid, but "*.example.com" is valid.
+            return baseHost.split("\\.").length >= 2 && isValidHostname(baseHost);
+        }
+
+        // Check for standard hostname
+        return isValidHostname(host);
+    }
+
+    /**
+     * A helper method that performs the core RFC-compliant validation for a
+     * standard (non-wildcard) hostname.
+     *
+     * @param hostname The hostname string to validate.
+     * @return {@code true} if the hostname is valid, {@code false} otherwise.
+     */
+    private static boolean isValidHostname(String hostname) {
+        // Rule: Total length cannot exceed 253 characters.
+        if (hostname.length() > MAX_HOSTNAME_LENGTH) {
+            return false;
+        }
+
+        // Rule: Hostname structure must match the regex (labels separated by dots).
+        if (!HOSTNAME_PATTERN.matcher(hostname).matches()) {
+            return false;
+        }
+        
+        // Rule: Individual label length cannot exceed 63 characters.
+        // This is implicitly checked by the HOSTNAME_LABEL_REGEX, which has a
+        // length quantifier of {0,61} plus the two mandatory end characters,
+        // totaling 63. No extra check is needed.
+
+        return true;
+    }
+}
+
