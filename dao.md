@@ -1,5 +1,3 @@
-Here are three examples of how to achieve this using different technologies commonly used in Java ecosystems:
-
 1.  **Spring JDBC (JdbcTemplate)** - Recommended for most Spring applications.
 2.  **Raw JDBC** - Best for standalone applications without frameworks.
 3.  **JPA / Hibernate** - Best if you are using an ORM.
